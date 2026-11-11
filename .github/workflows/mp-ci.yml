@@ -570,8 +570,11 @@ jobs:
           path: vendor/netwatcher
       - if: steps.bin.outputs.cache-hit != 'true'
         run: |
-          sudo apt-get update
-          sudo apt-get install -qqy build-essential cmake clang pkg-config
+          # The runner image already has these; apt only fills a gap (its mirror is sometimes unreachable).
+          command -v cmake && command -v clang && command -v pkg-config && command -v make || {
+            sudo apt-get update
+            sudo apt-get install -qqy build-essential cmake clang pkg-config
+          }
           mkdir -p et/easytier-gui/dist
       - if: steps.bin.outputs.cache-hit != 'true'
         uses: mlugg/setup-zig@v2
