@@ -612,6 +612,8 @@ jobs:
         with:
           path: et
           ref: ${{ matrix.ref }}
+          # The baseline branch lives only on Ironboxplus/EasyTier; a run on another fork reads it there.
+          repository: ${{ matrix.ref && 'Ironboxplus/EasyTier' || github.repository }}
       # The binaries depend only on the Rust side: a push that changes the front end, the tests or
       # the CI files finds them in the cache and builds nothing.
       - id: bin
