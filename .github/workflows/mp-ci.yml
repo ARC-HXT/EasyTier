@@ -36,6 +36,7 @@ jobs:
       shards: ${{ steps.refs.outputs.shards }}
       jobs: ${{ steps.refs.outputs.jobs }}
       linux_matrix: ${{ steps.refs.outputs.linux_matrix }}
+      scenarios: ${{ steps.refs.outputs.scenarios }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -52,6 +53,12 @@ jobs:
           # `.ci/jobs`: the job names to run, space separated (default: all).
           # A job also brings the jobs it needs.
           jobs=" $( [ -s .ci/jobs ] && cat .ci/jobs || echo all ) "
+          # "blackbox:<scenario>" runs only the named black-box scenarios (and the blackbox job).
+          picked=$(for j in $jobs; do case $j in blackbox:*) printf "%s " "${j#blackbox:}";; esac; done)
+          if [ -n "$picked" ]; then jobs="$jobs blackbox "; scenarios=$picked
+          else scenarios="s31_legacy s31_native_punch s31_cli_compat s31_faketcp_numbers s32_cc_matrix s32_rate_limit s32_brutal_loss s32_sqm s32_multi_egress s32_relay_then_punch s32_punch_rate s32_relay_beside_punch s32_path_policy s32_dataplane s32_reliable_class s32_oversize s32_split_proxy s3x_harsh s3x_vs_official s32_mwan3 s33_churn s33_soak s33_route_loop s34_hot_selection s40_relay_failover_empty_peer s41_recv_limit_liveness s42_quic_tunnel_etq1 s43_proxy_flows s44_flow_pinning s45_tcp_punch_keepalive s46_sym_punch s47_mixed_fork_versions s48_stun_mismatch"; fi
+          json=$(for x in $scenarios; do printf '"%s",' "$x"; done)
+          echo "scenarios=[${json%,}]" >> "$GITHUB_OUTPUT"
           # aarch64 only when the Linux binaries themselves are asked for; ui-e2e and blackbox use x86_64.
           x86='{"arch":"x86_64","target":"x86_64-unknown-linux-musl"}'
           arm='{"arch":"aarch64","target":"aarch64-unknown-linux-musl"}'
@@ -765,7 +772,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        scenario: [s31_legacy, s31_native_punch, s31_cli_compat, s31_faketcp_numbers, s32_cc_matrix, s32_rate_limit, s32_brutal_loss, s32_sqm, s32_multi_egress, s32_relay_then_punch, s32_punch_rate, s32_relay_beside_punch, s32_path_policy, s32_dataplane, s32_reliable_class, s32_oversize, s32_split_proxy, s3x_harsh, s3x_vs_official, s32_mwan3, s33_churn, s33_soak, s33_route_loop, s34_hot_selection, s40_relay_failover_empty_peer, s41_recv_limit_liveness, s42_quic_tunnel_etq1, s43_proxy_flows, s44_flow_pinning, s45_tcp_punch_keepalive, s46_sym_punch, s47_mixed_fork_versions, s48_stun_mismatch]
+        scenario: ${{ fromJSON(needs.plan.outputs.scenarios) }}
     steps:
       - uses: actions/checkout@v5
         with:
